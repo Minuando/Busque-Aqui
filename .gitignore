@@ -1,0 +1,122 @@
+# ══════════════════════════════════════════════════════
+#  BusqueAqui — .gitignore
+# ══════════════════════════════════════════════════════
+
+# ── Dependências ────────────────────────────────────────
+node_modules/
+.npm/
+.yarn/
+.pnp/
+.pnp.js
+
+# ── Variáveis de ambiente ───────────────────────────────
+# Nunca versionar arquivos com senhas e chaves secretas.
+# Use .env.example como modelo público.
+.env
+.env.*
+!.env.example
+
+# ── Logs ────────────────────────────────────────────────
+logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Build / dist ────────────────────────────────────────
+dist/
+build/
+out/
+
+# ── Cache ───────────────────────────────────────────────
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# ── Cobertura de testes ─────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── Sistema operacional ─────────────────────────────────
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+
+# ── Editores e IDEs ─────────────────────────────────────
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# JetBrains (IntelliJ, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim / Neovim
+*.swp
+*.swo
+*.swn
+Session.vim
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+
+# Sublime Text
+*.sublime-workspace
+
+# ── Banco de dados ──────────────────────────────────────
+# Dumps e backups locais
+*.sql.gz
+*.dump
+*.bak
+backups/
+dumps/
+
+# ── Certificados e chaves ───────────────────────────────
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.cer
+ssl/
+certs/
+
+# ── Uploads e arquivos gerados em runtime ───────────────
+uploads/
+tmp/
+temp/
+
+# ── Relatórios de auditoria npm ─────────────────────────
+npm-audit.json
