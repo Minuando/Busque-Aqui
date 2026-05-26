@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Busque Aqui — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+    Busque<span>Aqui</span>
+  </div>
+  <div class="nav-r">
+    <a href="index.html" class="btn btn-ghost btn-sm">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>
+      Mapa
+    </a>
+    <button class="btn btn-danger btn-sm" onclick="logout()">Sair</button>
+  </div>
+</nav>
+
+<div class="app">
+
+<!-- PAGE ADMIN -->
+<div id="page-admin" class="page active">
+  <div class="aw">
+    <div class="ah">
+      <div class="at">Painel Administrativo</div>
+      <div style="display:flex;gap:7px;align-items:center">
+        <span id="admin-who" style="font-size:.76rem;color:var(--muted)"></span>
+        <button class="btn btn-ghost btn-sm" id="btn-my-password" onclick="openMyPassword()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Minha Senha
+        </button>
+        <button class="btn btn-accent" id="btn-new-store" onclick="openStoreModal()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5v14"/></svg>
+          Nova Loja
+        </button>
+      </div>
+    </div>
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchTab('stores',this)">Lojas</button>
+      <button class="tab-btn" onclick="switchTab('admins',this)">Administradores</button>
+    </div>
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card"><div class="skeleton" style="height:28px;width:40%;margin-bottom:5px"></div><div class="skeleton" style="width:65%;height:11px"></div></div>
+      <div class="stat-card"><div class="skeleton" style="height:28px;width:40%;margin-bottom:5px"></div><div class="skeleton" style="width:65%;height:11px"></div></div>
+      <div class="stat-card"><div class="skeleton" style="height:28px;width:40%;margin-bottom:5px"></div><div class="skeleton" style="width:65%;height:11px"></div></div>
+      <div class="stat-card"><div class="skeleton" style="height:28px;width:40%;margin-bottom:5px"></div><div class="skeleton" style="width:65%;height:11px"></div></div>
+    </div>
+    <div id="tab-stores">
+      <div class="tw"><table>
+        <thead><tr><th>Nome</th><th>Categoria</th><th>Cidade</th><th>Status Agora</th><th>Próximo Evento</th><th>Ações</th></tr></thead>
+        <tbody id="stores-tbody"><tr><td colspan="6" style="text-align:center;padding:22px;color:var(--muted)"><div class="spinner"></div></td></tr></tbody>
+      </table></div>
+    </div>
+    <div id="tab-admins" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-accent" onclick="openAdminModal()">+ Novo Admin</button>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th>Usuário</th><th>Criado em</th><th style="min-width:160px">Ações</th></tr></thead>
+        <tbody id="admins-tbody"><tr><td colspan="3" style="text-align:center;padding:22px;color:var(--muted)"><div class="spinner"></div></td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- .app -->
+
+<!-- MODAL LOJA -->
+<div class="mo" id="modal-store" onclick="if(event.target===this)closeModal('modal-store')">
+<div class="modal">
+  <div class="mh">
+    <div class="mh-title" id="sm-title">Nova Loja</div>
+    <button class="mc" onclick="closeModal('modal-store')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="mb">
+    <div class="fg">
+      <div class="fgroup ff"><label class="flabel">Nome *</label><input class="finput" id="s-name" placeholder="Ex: Loja Centro"></div>
+      <div class="fgroup"><label class="flabel">Categoria *</label>
+        <select class="fselect" id="s-cat">
+          <option value="">Selecione…</option>
+          <option>Moda</option><option>Eletrônicos</option><option>Alimentos</option>
+          <option>Saúde &amp; Beleza</option><option>Casa &amp; Decoração</option>
+          <option>Esportes</option><option>Livraria</option><option>Pet Shop</option><option>Outros</option>
+        </select>
+      </div>
+      <div class="fgroup"><label class="flabel">Telefone</label><input class="finput" id="s-phone" placeholder="(11) 9 9999-9999"></div>
+      <div class="fgroup ff"><label class="flabel">Endereço</label><input class="finput" id="s-address" placeholder="Rua, número, bairro"></div>
+      <div class="fgroup"><label class="flabel">Cidade</label><input class="finput" id="s-city" placeholder="São Paulo"></div>
+      <div class="fgroup"><label class="flabel">Estado</label><input class="finput" id="s-state" placeholder="SP" maxlength="2" style="text-transform:uppercase"></div>
+      <div class="fgroup"><label class="flabel">Latitude *</label><input class="finput" id="s-lat" type="number" step="any" placeholder="-23.5505"><div class="fhint">Clique direito no Google Maps → copiar coordenadas</div></div>
+      <div class="fgroup"><label class="flabel">Longitude *</label><input class="finput" id="s-lng" type="number" step="any" placeholder="-46.6333"></div>
+      <div class="fgroup ff"><label class="flabel">Website</label><input class="finput" id="s-website" placeholder="https://minhaloja.com"></div>
+      <div class="fgroup ff"><label class="flabel">Descrição</label><textarea class="ftarea" id="s-desc" placeholder="Breve descrição…"></textarea></div>
+
+      <!-- ══ HORÁRIOS ══ -->
+      <div class="fgroup ff">
+        <label class="flabel" style="margin-bottom:8px">Horário de Funcionamento</label>
+        <div class="sch-editor">
+          <div class="sch-editor-header">
+            <span>Modo de operação</span>
+            <div class="sch-status-toggle">
+              <button class="sch-toggle-btn" data-mode="open"   onclick="setStoreMode('open',this)">Sempre aberta</button>
+              <button class="sch-toggle-btn active-auto" data-mode="auto"   onclick="setStoreMode('auto',this)">Por horário</button>
+              <button class="sch-toggle-btn" data-mode="closed" onclick="setStoreMode('closed',this)">Sempre fechada</button>
+            </div>
+          </div>
+          <div id="sch-days-wrap"></div>
+          <div class="tz-row">
+            <span class="tz-label">Fuso horário:</span>
+            <select class="tz-select" id="s-tz" onchange="updateTzPreview()">
+              <option value="America/Sao_Paulo">América/São Paulo (BRT)</option>
+              <option value="America/Manaus">América/Manaus (AMT)</option>
+              <option value="America/Belem">América/Belém (BRT)</option>
+              <option value="America/Fortaleza">América/Fortaleza (BRT)</option>
+              <option value="America/Recife">América/Recife (BRT)</option>
+              <option value="America/Bahia">América/Bahia (BRT)</option>
+              <option value="America/Campo_Grande">América/Campo Grande (AMST)</option>
+              <option value="America/Cuiaba">América/Cuiabá (AMST)</option>
+              <option value="America/Porto_Velho">América/Porto Velho (AMT)</option>
+              <option value="America/Boa_Vista">América/Boa Vista (AMT)</option>
+              <option value="America/Rio_Branco">América/Rio Branco (ACT)</option>
+              <option value="America/Noronha">América/Noronha (FNT)</option>
+              <option value="UTC">UTC</option>
+            </select>
+            <span class="tz-preview" id="tz-preview"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn btn-ghost" onclick="closeModal('modal-store')">Cancelar</button>
+    <button class="btn btn-accent" id="btn-save-store" onclick="saveStore()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Salvar
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL ADMIN -->
+<div class="mo" id="modal-admin" onclick="if(event.target===this)closeModal('modal-admin')">
+<div class="modal" style="max-width:360px">
+  <div class="mh"><div class="mh-title">Novo Administrador</div><button class="mc" onclick="closeModal('modal-admin')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="mb">
+    <div class="fgroup" style="margin-bottom:12px"><label class="flabel">Usuário</label><input class="finput" id="a-user" placeholder="novoAdmin"></div>
+    <div class="fgroup"><label class="flabel">Senha</label><input class="finput" id="a-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
+  </div>
+  <div class="mf"><button class="btn btn-ghost" onclick="closeModal('modal-admin')">Cancelar</button><button class="btn btn-accent" onclick="saveAdmin()">Criar</button></div>
+</div>
+</div>
+
+<!-- MODAL SENHA -->
+<div class="mo" id="modal-password" onclick="if(event.target===this)closeModal('modal-password')">
+<div class="modal" style="max-width:400px">
+  <div class="mh">
+    <div class="mh-title" id="pw-title">Alterar Senha</div>
+    <button class="mc" onclick="closeModal('modal-password')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="mb">
+    <div id="pw-target-info" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:16px">
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(240,180,41,.15);border:1px solid rgba(240,180,41,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f0b429" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <div id="pw-username" style="font-weight:600;font-size:.9rem"></div>
+        <div id="pw-context-label" style="font-size:.73rem;color:var(--muted)"></div>
+      </div>
+    </div>
+    <div class="fgroup" id="pw-current-wrap" style="margin-bottom:14px">
+      <label class="flabel">Senha Atual</label>
+      <div style="position:relative">
+        <input class="finput" id="pw-current" type="password" placeholder="Digite sua senha atual" style="padding-right:38px">
+        <button type="button" onclick="togglePwVis('pw-current',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:2px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="pw-sep" style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Nova Senha</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+    <div class="fgroup" style="margin-bottom:14px">
+      <label class="flabel">Nova Senha</label>
+      <div style="position:relative">
+        <input class="finput" id="pw-new" type="password" placeholder="Mínimo 6 caracteres" oninput="checkPwStrength(this.value)" style="padding-right:38px">
+        <button type="button" onclick="togglePwVis('pw-new',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:2px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div style="margin-top:6px">
+        <div style="height:3px;border-radius:3px;background:var(--border);overflow:hidden">
+          <div id="pw-strength-bar" style="height:100%;width:0%;transition:width .3s,background .3s;border-radius:3px"></div>
+        </div>
+        <div id="pw-strength-label" style="font-size:.68rem;color:var(--muted);margin-top:3px"></div>
+      </div>
+    </div>
+    <div class="fgroup">
+      <label class="flabel">Confirmar Nova Senha</label>
+      <div style="position:relative">
+        <input class="finput" id="pw-confirm" type="password" placeholder="Repita a nova senha" oninput="checkPwMatch()" style="padding-right:38px">
+        <button type="button" onclick="togglePwVis('pw-confirm',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:2px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div id="pw-match-label" style="font-size:.68rem;margin-top:3px"></div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn btn-ghost" onclick="closeModal('modal-password')">Cancelar</button>
+    <button class="btn btn-accent" id="btn-save-pw" onclick="savePassword()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Salvar Senha
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg class="ti" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="toast-icon"></svg>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+'use strict';
+
+// ════════════════════════════════════════
+//  AUTH — lê sessão
+// ════════════════════════════════════════
+let token    = sessionStorage.getItem('token');
+let authUser = sessionStorage.getItem('authUser');
+let authId   = sessionStorage.getItem('authId');
+
+// Redireciona para login se não autenticado
+if (!token) {
+  window.location.href = 'login.html';
+}
+
+let editingId = null;
+let storeMode = 'auto';
+let pwTargetId = null, pwTargetName = null;
+
+// ════════════════════════════════════════
+//  HTTP
+// ════════════════════════════════════════
+async function api(method, path, body) {
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(`/api${path}`, {
+    method, headers: h,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+const GET   = p     => api('GET',    p);
+const POST  = (p,b) => api('POST',   p, b);
+const PUT   = (p,b) => api('PUT',    p, b);
+const DEL   = p     => api('DELETE', p);
+const PATCH = (p,b) => api('PATCH',  p, b);
+
+// ════════════════════════════════════════
+//  CORES POR CATEGORIA
+// ════════════════════════════════════════
+const CATS = {
+  'Moda':            {bg:'rgba(155,93,229,.18)', fg:'#c084fc'},
+  'Eletrônicos':     {bg:'rgba(59,130,246,.18)', fg:'#60a5fa'},
+  'Alimentos':       {bg:'rgba(34,197,94,.18)',  fg:'#4ade80'},
+  'Saúde & Beleza':  {bg:'rgba(244,63,94,.18)',  fg:'#fb7185'},
+  'Casa & Decoração':{bg:'rgba(249,115,22,.18)', fg:'#fb923c'},
+  'Esportes':        {bg:'rgba(20,184,166,.18)', fg:'#2dd4bf'},
+  'Livraria':        {bg:'rgba(234,179,8,.18)',  fg:'#facc15'},
+  'Pet Shop':        {bg:'rgba(236,72,153,.18)', fg:'#f472b6'},
+  'Outros':          {bg:'rgba(148,163,184,.18)',fg:'#94a3b8'},
+};
+const cc = cat => CATS[cat] || CATS['Outros'];
+
+// ════════════════════════════════════════
+//  STATUS PILL
+// ════════════════════════════════════════
+function statusPill(s) {
+  if (s.is_open === true)  return `<span class="status-pill pill-open"><span class="dot"></span>${s.status_label}</span>`;
+  if (s.is_open === false) {
+    const cls = s.opens_in_day === 0 ? 'pill-soon' : 'pill-closed';
+    return `<span class="status-pill ${cls}"><span class="dot"></span>${s.status_label}</span>`;
+  }
+  return `<span class="status-pill pill-unknown"><span class="dot"></span>${s.status_label}</span>`;
+}
+
+function nextChip(s) {
+  if (!s.next_event) return '';
+  const icon = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+  return `<div class="next-chip">${icon}${s.next_event}</div>`;
+}
+
+// ════════════════════════════════════════
+//  ADMIN TABLE
+// ════════════════════════════════════════
+async function loadAdminStores() {
+  try {
+    const data = await GET('/stores');
+    const tbody = document.getElementById('stores-tbody');
+    if (!data.length) { tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Nenhuma loja cadastrada.</td></tr>`; return; }
+    tbody.innerHTML = data.map(s=>{
+      const c = cc(s.category);
+      return `<tr>
+        <td><strong>${s.name}</strong></td>
+        <td><span class="badge" style="background:${c.bg};color:${c.fg}">${s.category}</span></td>
+        <td>${s.city||'—'}${s.state?'/'+s.state:''}</td>
+        <td>${statusPill(s)}</td>
+        <td style="font-size:.78rem;color:var(--muted)">${s.next_event||'—'}</td>
+        <td><div class="tact">
+          <button class="btn btn-ghost btn-sm" onclick="openStoreModal(${s.id})">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteStore(${s.id},'${s.name.replace(/'/g,"\\'")}')">Excluir</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  } catch(e) { showToast('Erro: '+e.message,'error'); }
+}
+
+async function loadStats() {
+  try {
+    const s = await GET('/stats');
+    document.getElementById('stats-row').innerHTML = `
+      <div class="stat-card"><div class="stat-v">${s.total}</div><div class="stat-l">Total de Lojas</div></div>
+      <div class="stat-card"><div class="stat-v">${s.open}</div><div class="stat-l">Abertas Agora</div></div>
+      <div class="stat-card"><div class="stat-v">${s.categories}</div><div class="stat-l">Categorias</div></div>
+      <div class="stat-card"><div class="stat-v">${s.cities}</div><div class="stat-l">Cidades</div></div>`;
+  } catch{}
+}
+
+async function loadAdminList() {
+  try {
+    const data = await GET('/admins');
+    const tbody = document.getElementById('admins-tbody');
+    tbody.innerHTML = data.map(a=>`<tr>
+      <td><strong>${a.username}</strong></td>
+      <td style="color:var(--muted);font-size:.78rem">${new Date(a.created_at).toLocaleDateString('pt-BR')}</td>
+      <td>
+        <div class="tact">
+          <button class="btn btn-ghost btn-sm" onclick="openPasswordModal(${a.id},'${a.username}')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Senha
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAdmin(${a.id},'${a.username}')">Remover</button>
+        </div>
+      </td>
+    </tr>`).join('') || `<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">Nenhum admin.</td></tr>`;
+  } catch(e) { showToast('Erro: '+e.message,'error'); }
+}
+
+async function loadCategories() {
+  try { await GET('/categories'); } catch{}
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active');
+  document.getElementById('tab-stores').style.display = tab==='stores'?'':'none';
+  document.getElementById('tab-admins').style.display = tab==='admins'?'':'none';
+  document.getElementById('btn-new-store').style.display = tab==='stores'?'':'none';
+  if (tab==='admins') loadAdminList();
+}
+
+// ════════════════════════════════════════
+//  SCHEDULE EDITOR
+// ════════════════════════════════════════
+const SCH_DAYS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+function buildScheduleEditor(schedule, tz) {
+  let todayIdx = 0;
+  try {
+    const p = new Intl.DateTimeFormat('en-US',{timeZone:tz||'America/Sao_Paulo',weekday:'short'}).formatToParts(new Date());
+    todayIdx = {Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[p.find(x=>x.type==='weekday')?.value] ?? 0;
+  } catch{}
+
+  const wrap = document.getElementById('sch-days-wrap');
+  wrap.innerHTML = SCH_DAYS.map((name,i)=>{
+    const slot    = schedule?.[i];
+    const enabled = !!slot;
+    const open    = slot?.open  || '09:00';
+    const close   = slot?.close || '18:00';
+    const isToday = i === todayIdx;
+    return `<div class="sch-day-row${enabled?'':' disabled'}" id="sch-row-${i}">
+      <div class="sch-day-label">
+        ${name}${isToday?'<span class="today-mark">hoje</span>':''}
+      </div>
+      <div class="sch-times" id="sch-times-${i}">
+        ${enabled
+          ? `<input class="sch-time" type="time" id="sch-open-${i}" value="${open}">
+             <span class="sch-sep">–</span>
+             <input class="sch-time" type="time" id="sch-close-${i}" value="${close}">`
+          : `<span class="sch-closed-label">Fechado</span>`}
+      </div>
+      <label class="sch-toggle-day" title="${enabled?'Desativar dia':'Ativar dia'}">
+        <input type="checkbox" id="sch-chk-${i}" ${enabled?'checked':''} onchange="toggleDay(${i})">
+        <span class="sch-slider"></span>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+function toggleDay(i) {
+  const checked = document.getElementById(`sch-chk-${i}`).checked;
+  const row     = document.getElementById(`sch-row-${i}`);
+  const times   = document.getElementById(`sch-times-${i}`);
+  row.classList.toggle('disabled', !checked);
+  times.innerHTML = checked
+    ? `<input class="sch-time" type="time" id="sch-open-${i}" value="09:00">
+       <span class="sch-sep">–</span>
+       <input class="sch-time" type="time" id="sch-close-${i}" value="18:00">`
+    : `<span class="sch-closed-label">Fechado</span>`;
+}
+
+function setStoreMode(mode, el) {
+  storeMode = mode;
+  document.querySelectorAll('.sch-toggle-btn').forEach(b=>{
+    b.className = `sch-toggle-btn${b.dataset.mode===mode?' active-'+mode:''}`;
+  });
+  const wrap = document.getElementById('sch-days-wrap');
+  wrap.className = mode === 'auto' ? '' : 'auto-off';
+}
+
+function readScheduleFromEditor() {
+  if (storeMode !== 'auto') return null;
+  const sch = {};
+  for (let i=0; i<7; i++) {
+    const chk = document.getElementById(`sch-chk-${i}`);
+    if (chk?.checked) {
+      sch[i] = {
+        open:  document.getElementById(`sch-open-${i}`)?.value  || '09:00',
+        close: document.getElementById(`sch-close-${i}`)?.value || '18:00',
+      };
+    }
+  }
+  return sch;
+}
+
+function updateTzPreview() {
+  const tz  = document.getElementById('s-tz').value;
+  const now = new Date();
+  try {
+    const time = now.toLocaleTimeString('pt-BR',{timeZone:tz,hour:'2-digit',minute:'2-digit'});
+    const day  = now.toLocaleDateString('pt-BR',{timeZone:tz,weekday:'long'});
+    document.getElementById('tz-preview').textContent = `Agora: ${day}, ${time}`;
+  } catch {
+    document.getElementById('tz-preview').textContent = '';
+  }
+}
+
+// ════════════════════════════════════════
+//  STORE MODAL
+// ════════════════════════════════════════
+async function openStoreModal(id=null) {
+  editingId = id;
+  document.getElementById('sm-title').textContent = id ? 'Editar Loja' : 'Nova Loja';
+
+  let schedule = {1:{open:'09:00',close:'18:00'},2:{open:'09:00',close:'18:00'},3:{open:'09:00',close:'18:00'},4:{open:'09:00',close:'18:00'},5:{open:'09:00',close:'18:00'}};
+  let tz   = 'America/Sao_Paulo';
+  let mode = 'auto';
+
+  if (id) {
+    try {
+      const s = await GET(`/stores/${id}`);
+      document.getElementById('s-name').value    = s.name;
+      document.getElementById('s-cat').value     = s.category;
+      document.getElementById('s-phone').value   = s.phone   || '';
+      document.getElementById('s-address').value = s.address || '';
+      document.getElementById('s-city').value    = s.city    || '';
+      document.getElementById('s-state').value   = s.state   || '';
+      document.getElementById('s-lat').value     = s.lat;
+      document.getElementById('s-lng').value     = s.lng;
+      document.getElementById('s-website').value = s.website || '';
+      document.getElementById('s-desc').value    = s.description || '';
+      schedule = s.hours_schedule || schedule;
+      tz       = s.timezone       || tz;
+      mode     = s.status         || 'auto';
+    } catch(e) { showToast('Erro: '+e.message,'error'); return; }
+  } else {
+    ['s-name','s-cat','s-phone','s-address','s-city','s-state','s-lat','s-lng','s-website','s-desc']
+      .forEach(id=>document.getElementById(id).value='');
+  }
+
+  const tzSel = document.getElementById('s-tz');
+  tzSel.value = tz;
+  updateTzPreview();
+
+  storeMode = mode;
+  document.querySelectorAll('.sch-toggle-btn').forEach(b=>{
+    b.className = `sch-toggle-btn${b.dataset.mode===mode?' active-'+mode:''}`;
+  });
+
+  buildScheduleEditor(schedule, tz);
+  document.getElementById('sch-days-wrap').className = mode==='auto' ? '' : 'auto-off';
+
+  openModal('modal-store');
+}
+
+async function saveStore() {
+  const name = document.getElementById('s-name').value.trim();
+  const cat  = document.getElementById('s-cat').value;
+  const lat  = parseFloat(document.getElementById('s-lat').value);
+  const lng  = parseFloat(document.getElementById('s-lng').value);
+  if (!name || !cat || isNaN(lat) || isNaN(lng)) { showToast('Preencha os campos obrigatórios (*)','error'); return; }
+
+  const body = {
+    name, category:cat,
+    phone:          document.getElementById('s-phone').value.trim()||null,
+    address:        document.getElementById('s-address').value.trim()||null,
+    city:           document.getElementById('s-city').value.trim()||null,
+    state:          document.getElementById('s-state').value.trim().toUpperCase()||null,
+    lat, lng,
+    website:        document.getElementById('s-website').value.trim()||null,
+    description:    document.getElementById('s-desc').value.trim()||null,
+    status:         storeMode,
+    timezone:       document.getElementById('s-tz').value,
+    hours_schedule: readScheduleFromEditor(),
+  };
+
+  const btn = document.getElementById('btn-save-store');
+  btn.disabled=true; btn.innerHTML='<div class="spinner"></div> Salvando…';
+  try {
+    editingId ? await PUT(`/stores/${editingId}`,body) : await POST('/stores',body);
+    showToast(editingId?'Loja atualizada!':'Loja criada!','success');
+    closeModal('modal-store');
+    loadAdminStores(); loadStats(); loadCategories();
+  } catch(e) { showToast(e.message,'error'); }
+  finally    { btn.disabled=false; btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar'; }
+}
+
+async function deleteStore(id,name) {
+  if (!confirm(`Excluir "${name}"?`)) return;
+  try { await DEL(`/stores/${id}`); showToast('Loja removida.','success'); loadAdminStores(); loadStats(); loadCategories(); }
+  catch(e) { showToast(e.message,'error'); }
+}
+
+// ════════════════════════════════════════
+//  ADMIN MODAL
+// ════════════════════════════════════════
+function openAdminModal() { document.getElementById('a-user').value=''; document.getElementById('a-pass').value=''; openModal('modal-admin'); }
+async function saveAdmin() {
+  const username=document.getElementById('a-user').value.trim(), password=document.getElementById('a-pass').value;
+  if (!username||password.length<6) { showToast('Usuário e senha (mín. 6) obrigatórios.','error'); return; }
+  try { await POST('/admins',{username,password}); showToast(`Admin '${username}' criado!`,'success'); closeModal('modal-admin'); loadAdminList(); }
+  catch(e) { showToast(e.message,'error'); }
+}
+async function deleteAdmin(id,u) {
+  if (!confirm(`Remover "${u}"?`)) return;
+  try { await DEL(`/admins/${id}`); showToast('Admin removido.','success'); loadAdminList(); }
+  catch(e) { showToast(e.message,'error'); }
+}
+
+// ════════════════════════════════════════
+//  GERENCIAMENTO DE SENHA
+// ════════════════════════════════════════
+function openPasswordModal(id, username) {
+  pwTargetId   = id;
+  pwTargetName = username;
+  const isSelf = String(id) === String(authId);
+
+  document.getElementById('pw-title').textContent =
+    isSelf ? 'Alterar Minha Senha' : `Redefinir Senha — ${username}`;
+  document.getElementById('pw-username').textContent = username;
+  document.getElementById('pw-context-label').textContent =
+    isSelf
+      ? 'Você está alterando sua própria senha'
+      : 'Redefinição administrativa (sem necessidade de senha atual)';
+
+  const curWrap = document.getElementById('pw-current-wrap');
+  const sep     = document.getElementById('pw-sep');
+  curWrap.style.display = isSelf ? '' : 'none';
+  sep.style.display     = isSelf ? '' : 'none';
+
+  ['pw-current','pw-new','pw-confirm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('pw-strength-bar').style.width   = '0%';
+  document.getElementById('pw-strength-label').textContent = '';
+  document.getElementById('pw-match-label').textContent    = '';
+
+  openModal('modal-password');
+}
+
+function pwScore(pw) {
+  let s = 0;
+  if (pw.length >= 6)  s++;
+  if (pw.length >= 10) s++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+  if (/[0-9]/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  return Math.min(s, 4);
+}
+
+function checkPwStrength(val) {
+  const bar   = document.getElementById('pw-strength-bar');
+  const label = document.getElementById('pw-strength-label');
+  if (!val) { bar.style.width='0%'; label.textContent=''; return; }
+  const score  = pwScore(val);
+  const levels = [
+    { pct:'20%', color:'#e05252', text:'Muito fraca' },
+    { pct:'40%', color:'#f59e0b', text:'Fraca' },
+    { pct:'60%', color:'#facc15', text:'Razoável' },
+    { pct:'80%', color:'#60a5fa', text:'Boa' },
+    { pct:'100%',color:'#4ade80', text:'Forte' },
+  ];
+  const l = levels[score] || levels[0];
+  bar.style.width      = l.pct;
+  bar.style.background = l.color;
+  label.textContent    = l.text;
+  label.style.color    = l.color;
+  checkPwMatch();
+}
+
+function checkPwMatch() {
+  const nw  = document.getElementById('pw-new').value;
+  const cf  = document.getElementById('pw-confirm').value;
+  const lbl = document.getElementById('pw-match-label');
+  if (!cf) { lbl.textContent=''; return; }
+  if (nw === cf) {
+    lbl.textContent = '✓ Senhas coincidem';
+    lbl.style.color = '#4ade80';
+  } else {
+    lbl.textContent = '✗ Senhas não coincidem';
+    lbl.style.color = '#f87171';
+  }
+}
+
+function togglePwVis(inputId, btn) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.style.opacity = el.type === 'text' ? '1' : '0.5';
+}
+
+async function savePassword() {
+  const isSelf    = String(pwTargetId) === String(authId);
+  const newPw     = document.getElementById('pw-new').value;
+  const confirmPw = document.getElementById('pw-confirm').value;
+  const currentPw = document.getElementById('pw-current')?.value;
+
+  if (isSelf && !currentPw) return showToast('Informe a senha atual.', 'error');
+  if (!newPw || newPw.length < 6) return showToast('A nova senha deve ter no mínimo 6 caracteres.', 'error');
+  if (newPw !== confirmPw) return showToast('As senhas não coincidem.', 'error');
+
+  const body = { new_password: newPw };
+  if (isSelf) body.current_password = currentPw;
+
+  const btn = document.getElementById('btn-save-pw');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Salvando…';
+
+  try {
+    const data = await PATCH(`/admins/${pwTargetId}/password`, body);
+    showToast(data.message || 'Senha alterada!', 'success');
+    closeModal('modal-password');
+  } catch(e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Salvar Senha';
+  }
+}
+
+function openMyPassword() {
+  if (!authId) return;
+  openPasswordModal(authId, authUser);
+}
+
+// ════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════
+function logout() {
+  sessionStorage.removeItem('token');
+  sessionStorage.removeItem('authUser');
+  sessionStorage.removeItem('authId');
+  window.location.href = 'index.html';
+}
+
+// ════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type='success') {
+  const t   = document.getElementById('toast');
+  const ico = document.getElementById('toast-icon');
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = `toast ${type}`;
+  ico.innerHTML = type === 'success'
+    ? '<polyline points="20 6 9 17 4 12"/>'
+    : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+  requestAnimationFrame(() => t.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('admin-who').textContent = `Logado como ${authUser}`;
+  loadAdminStores();
+  loadStats();
+  loadCategories();
+});
+</script>
+</body>
+</html>

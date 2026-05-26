@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Busque Aqui — Encontre sua Loja</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+    Busque<span>Aqui</span>
+  </div>
+  <div class="nav-r">
+    <div class="db-badge" id="db-badge"><div class="db-dot"></div><span id="db-label">Conectando…</span></div>
+    <a href="admin.html" class="btn btn-ghost btn-sm">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Admin
+    </a>
+  </div>
+</nav>
+
+<div class="app">
+
+<!-- PAGE MAP -->
+<div id="page-map" class="page active">
+  <div class="sidebar">
+    <div class="sb-head">
+      <div class="sb-title">Encontre uma Loja</div>
+      <div class="search-wrap">
+        <svg class="si" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="search-input" type="text" placeholder="Buscar nome, cidade…" oninput="onSearch()">
+      </div>
+      <div class="chips" id="filter-chips">
+        <button class="chip active" onclick="setCat(this,'all')">Todos</button>
+      </div>
+    </div>
+    <div class="store-list" id="store-list">
+      <div style="padding:10px;display:flex;flex-direction:column;gap:8px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px"><div class="skeleton" style="width:60%;height:15px"></div><div class="skeleton"></div><div class="skeleton" style="width:50%"></div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px"><div class="skeleton" style="width:70%;height:15px"></div><div class="skeleton" style="width:80%"></div><div class="skeleton" style="width:45%"></div></div>
+      </div>
+    </div>
+    <div class="detail-panel" id="detail-panel" style="display:none">
+      <button class="dp-close" onclick="closeDetail()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+  <div id="map"></div>
+</div>
+
+</div><!-- .app -->
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg class="ti" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="toast-icon"></svg>
+  <span id="toast-msg"></span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+'use strict';
+
+let stores = [], activeCat = 'all', activeCardId = null;
+let map = null, markers = {};
+let searchTimer = null;
+
+// ════════════════════════════════════════
+//  HTTP
+// ════════════════════════════════════════
+async function api(method, path, body) {
+  const h = { 'Content-Type': 'application/json' };
+  const res = await fetch(`/api${path}`, {
+    method, headers: h,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+const GET = p => api('GET', p);
+
+// ════════════════════════════════════════
+//  CORES POR CATEGORIA
+// ════════════════════════════════════════
+const CATS = {
+  'Moda':            {bg:'rgba(155,93,229,.18)', fg:'#c084fc'},
+  'Eletrônicos':     {bg:'rgba(59,130,246,.18)', fg:'#60a5fa'},
+  'Alimentos':       {bg:'rgba(34,197,94,.18)',  fg:'#4ade80'},
+  'Saúde & Beleza':  {bg:'rgba(244,63,94,.18)',  fg:'#fb7185'},
+  'Casa & Decoração':{bg:'rgba(249,115,22,.18)', fg:'#fb923c'},
+  'Esportes':        {bg:'rgba(20,184,166,.18)', fg:'#2dd4bf'},
+  'Livraria':        {bg:'rgba(234,179,8,.18)',  fg:'#facc15'},
+  'Pet Shop':        {bg:'rgba(236,72,153,.18)', fg:'#f472b6'},
+  'Outros':          {bg:'rgba(148,163,184,.18)',fg:'#94a3b8'},
+};
+const cc = cat => CATS[cat] || CATS['Outros'];
+
+// ════════════════════════════════════════
+//  STATUS PILL
+// ════════════════════════════════════════
+function statusPill(s) {
+  if (s.is_open === true)  return `<span class="status-pill pill-open"><span class="dot"></span>${s.status_label}</span>`;
+  if (s.is_open === false) {
+    const cls = s.opens_in_day === 0 ? 'pill-soon' : 'pill-closed';
+    return `<span class="status-pill ${cls}"><span class="dot"></span>${s.status_label}</span>`;
+  }
+  return `<span class="status-pill pill-unknown"><span class="dot"></span>${s.status_label}</span>`;
+}
+
+function nextChip(s) {
+  if (!s.next_event) return '';
+  const icon = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+  return `<div class="next-chip">${icon}${s.next_event}</div>`;
+}
+
+// ════════════════════════════════════════
+//  HORÁRIO — mini-tabela no painel de detalhes
+// ════════════════════════════════════════
+const DAY_NAMES_FULL  = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const DAY_NAMES_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+function scheduleMini(s) {
+  if (!s.hours_schedule || s.status !== 'auto') return '';
+  let todayIdx = 0;
+  try {
+    const p = new Intl.DateTimeFormat('en-US',{timeZone: s.timezone||'America/Sao_Paulo', weekday:'short'}).formatToParts(new Date());
+    const d  = p.find(x=>x.type==='weekday')?.value;
+    todayIdx = {Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[d] ?? 0;
+  } catch{}
+
+  const rows = [0,1,2,3,4,5,6].map(i => {
+    const slot    = s.hours_schedule[i];
+    const isToday = i === todayIdx;
+    const cls     = isToday ? 'sch-today' : '';
+    const hours   = slot?.open
+      ? `<span class="hours-col">${slot.open} – ${slot.close}</span>`
+      : `<span class="closed-col">Fechado</span>`;
+    return `<tr class="${cls}"><td class="day-col">${DAY_NAMES_SHORT[i]}${isToday?'<b style="color:var(--accent)"> ←</b>':''}</td><td>${hours}</td></tr>`;
+  }).join('');
+  return `<div class="schedule-mini"><table>${rows}</table></div>`;
+}
+
+// ════════════════════════════════════════
+//  MAP
+// ════════════════════════════════════════
+function initMap() {
+  if (map) return;
+  map = L.map('map').setView([-15.78,-47.93],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom:19
+  }).addTo(map);
+}
+
+function mkIcon(cat, isOpen) {
+  const c   = cc(cat);
+  const col = isOpen === true ? '#4ade80' : isOpen === false ? '#f87171' : '#94a3b8';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">
+    <filter id="ds"><feDropShadow dx="0" dy="2" stdDeviation="1.8" flood-opacity=".4"/></filter>
+    <path d="M15 1C9.48 1 5 5.48 5 11c0 7.88 10 24 10 24s10-16.12 10-24C25 5.48 20.52 1 15 1z" fill="${c.fg}" filter="url(#ds)"/>
+    <circle cx="15" cy="11" r="5" fill="white" opacity=".85"/>
+    <circle cx="15" cy="11" r="2.8" fill="${col}"/>
+  </svg>`;
+  return L.divIcon({html:svg,className:'',iconSize:[30,38],iconAnchor:[15,38],popupAnchor:[0,-40]});
+}
+
+function renderMarkers() {
+  if (!map) return;
+  Object.values(markers).forEach(m=>map.removeLayer(m));
+  markers = {};
+  stores.forEach(s=>{
+    const m = L.marker([s.lat,s.lng],{icon:mkIcon(s.category,s.is_open)}).addTo(map);
+    m.bindPopup(buildPopupHTML(s),{maxWidth:260});
+    m.on('click',()=>highlightCard(s.id));
+    markers[s.id]=m;
+  });
+}
+
+function buildPopupHTML(s) {
+  const c = cc(s.category);
+  return `<div class="pop">
+    <div style="margin-bottom:7px;display:flex;align-items:center;gap:6px">
+      <span style="background:${c.bg};color:${c.fg};padding:2px 7px;border-radius:20px;font-size:.68rem">${s.category}</span>
+      ${statusPill(s)}
+    </div>
+    <div class="pop-name">${s.name}</div>
+    ${s.next_event?`<div style="font-size:.72rem;color:var(--muted);margin-bottom:6px">${s.next_event}</div>`:''}
+    ${s.address?`<div class="pop-row"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${s.city}/${s.state}</div>`:''}
+    ${s.phone?`<div class="pop-row"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.33 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.73a16 16 0 0 0 6.29 6.29l.82-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${s.phone}</div>`:''}
+    ${s.website?`<div class="pop-row"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><a href="${s.website}" target="_blank">Site</a></div>`:''}
+  </div>`;
+}
+
+// ════════════════════════════════════════
+//  STORE LIST
+// ════════════════════════════════════════
+async function loadStores() {
+  const q = document.getElementById('search-input').value.trim();
+  const p = new URLSearchParams();
+  if (q) p.set('search',q);
+  if (activeCat !== 'all') p.set('category', activeCat);
+  try {
+    stores = await GET(`/stores?${p}`);
+    renderStoreList();
+    renderMarkers();
+  } catch(e) {
+    document.getElementById('store-list').innerHTML =
+      `<div class="empty-state"><div style="font-size:1.6rem;margin-bottom:8px">⚠️</div>Erro ao carregar lojas.<br><small style="color:var(--muted)">${e.message}</small></div>`;
+  }
+}
+
+async function loadCategories() {
+  try {
+    const cats = await GET('/categories');
+    const row  = document.getElementById('filter-chips');
+    row.innerHTML = `<button class="chip${activeCat==='all'?' active':''}" onclick="setCat(this,'all')">Todos</button>` +
+      cats.map(c=>`<button class="chip${activeCat===c?' active':''}" onclick="setCat(this,'${c.replace(/'/g,"\\'")}')">${c}</button>`).join('');
+  } catch{}
+}
+
+function renderStoreList() {
+  const el = document.getElementById('store-list');
+  if (!stores.length) { el.innerHTML=`<div class="empty-state"><div style="font-size:1.6rem;margin-bottom:8px">🔍</div>Nenhuma loja encontrada.</div>`; return; }
+  el.innerHTML = stores.map(s=>{
+    const c = cc(s.category);
+    return `<div class="scard${s.id===activeCardId?' active':''}" onclick="selectStore(${s.id})">
+      <div class="scard-top">
+        <div class="scard-name">${s.name}</div>
+        <span class="badge" style="background:${c.bg};color:${c.fg}">${s.category}</span>
+      </div>
+      <div class="scard-meta">
+        ${s.city?`<div class="mrow"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${s.city}, ${s.state}</div>`:''}
+        <div class="mrow" style="margin-top:2px">${statusPill(s)}</div>
+        ${nextChip(s)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectStore(id) {
+  activeCardId = id;
+  const s = stores.find(x=>x.id===id);
+  if (!s) return;
+  renderStoreList();
+  document.getElementById('detail-content').innerHTML = buildDetailHTML(s);
+  document.getElementById('detail-panel').style.display = 'block';
+  if (map && markers[id]) { map.setView([s.lat,s.lng],15,{animate:true}); markers[id].openPopup(); }
+}
+
+function buildDetailHTML(s) {
+  const c = cc(s.category);
+  return `<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px">
+    <span class="badge" style="background:${c.bg};color:${c.fg}">${s.category}</span>
+    ${statusPill(s)}
+  </div>
+  <div class="dp-name">${s.name}</div>
+  ${s.next_event?`<div style="font-size:.76rem;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${s.next_event}</div>`:''}
+  ${s.description?`<div style="font-size:.79rem;color:var(--muted);margin-bottom:8px;line-height:1.5">${s.description}</div>`:''}
+  ${s.address?`<div class="dp-row"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${s.address}, ${s.city}/${s.state}</div>`:''}
+  ${s.phone?`<div class="dp-row"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.33 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.73a16 16 0 0 0 6.29 6.29l.82-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${s.phone}</div>`:''}
+  ${s.website?`<div class="dp-row"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><a href="${s.website}" target="_blank">${s.website}</a></div>`:''}
+  ${scheduleMini(s)}`;
+}
+
+function highlightCard(id) {
+  activeCardId = id;
+  renderStoreList();
+  const s = stores.find(x=>x.id===id);
+  if (s) { document.getElementById('detail-content').innerHTML=buildDetailHTML(s); document.getElementById('detail-panel').style.display='block'; }
+  setTimeout(()=>document.querySelector('.scard.active')?.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function closeDetail() { activeCardId=null; document.getElementById('detail-panel').style.display='none'; renderStoreList(); }
+function setCat(el,cat) { activeCat=cat; document.querySelectorAll('.chip').forEach(b=>b.classList.remove('active')); el.classList.add('active'); loadStores(); }
+function onSearch() { clearTimeout(searchTimer); searchTimer=setTimeout(loadStores,350); }
+
+// ════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════
+let toastTimer;
+function showToast(msg,type='success') {
+  const t=document.getElementById('toast'), ico=document.getElementById('toast-icon');
+  document.getElementById('toast-msg').textContent=msg;
+  t.className=`toast ${type}`;
+  ico.innerHTML=type==='success'?'<polyline points="20 6 9 17 4 12"/>':'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+  requestAnimationFrame(()=>t.classList.add('show'));
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ════════════════════════════════════════
+//  DB BADGE
+// ════════════════════════════════════════
+async function checkDB() {
+  const badge=document.getElementById('db-badge'), label=document.getElementById('db-label');
+  try { await GET('/stats'); badge.className='db-badge ok'; label.textContent='PostgreSQL'; }
+  catch { badge.className='db-badge err'; label.textContent='Sem conexão'; }
+}
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  checkDB();
+  initMap();
+  loadStores();
+  loadCategories();
+  setInterval(()=>loadStores(), 5*60*1000);
+});
+</script>
+</body>
+</html>
